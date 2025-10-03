@@ -28,6 +28,53 @@ def random_word():
     word = dutch_database.get_random_word()
     return jsonify({"dutch": word[0], "english": word[1]})
 
+@app.route("/view", methods={"GET", "POST"})
+def view_database():
+    if request.method == "POST":
+        for key in request.form:
+            print(key)
+            dutch_database.remove_word(key)
+    
+    view_start = """
+    <!doctype html>
+    <html>
+        <head><title>Words</title></head>
+        <body>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Dutch</th>
+                        <th>English</th>
+                        <th>Success Count</th>
+                        <th>Remove</th>
+                    </tr>
+                </thead>
+                <tbody>
+    """
+    view_end = """
+                </tbody>
+            </table>
+        </body>
+    </html>
+    """
+
+    words = dutch_database.get_all_words()
+    for word in words:
+        view_start += f"""
+                    <tr>
+                        <td>{word[0].capitalize()}</td>
+                        <td>{word[1].capitalize()}</td>
+                        <td>{word[2]}</td>
+                        <td>
+                            <form method="POST">
+                                <button name={word[0]+':'+word[1]} type="submit">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    """
+
+    return render_template_string(view_start + view_end)
+
 if __name__ == "__main__":
     dutch_database.setup()
     app.run(host="0.0.0.0", port=5000)

@@ -26,6 +26,17 @@ def add_word(dutch: str, english: str):
     db.commit()
     db.close()
 
+def remove_word(word:str):
+    db = sqlite3.connect('dutch.db')
+    cursor = db.cursor()
+
+    cursor.execute("DELETE FROM translations WHERE word=?", (word,))
+    
+    print(f"deleting {word}")
+
+    db.commit()
+    db.close()
+    
 def get_random_word():
     db = sqlite3.connect("dutch.db")
     cursor = db.cursor()
@@ -37,3 +48,14 @@ def get_random_word():
     english = word.split(':')[1].capitalize()
 
     return (dutch, english)
+
+def get_all_words():
+    db = sqlite3.connect("dutch.db")
+    cursor = db.cursor()
+    cursor.execute("SELECT word, success_count FROM translations ORDER BY success_count")
+    rows = cursor.fetchall()
+    db.close()
+    words = []
+    for row in rows:
+        words.append([row[0].split(':')[0], row[0].split(':')[1], row[1]])
+    return words
