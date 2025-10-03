@@ -1,210 +1,105 @@
 #include "LiquidCrystal_I2C.h"
 #include "Wire.h"
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include "secrets.h"
+
+const char *ssid = SSID;
+const char *password = PASSWORD;
+
+NetworkServer server(80);
+String serverName = "http://192.168.2.8:5000/";
 
 #define HOLD_TIME 30000
+#define SCREEN_WIDTH 16
 
 // Address, characters per line, lines
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-int num_words;
-int current_word=0;
+char dutch[SCREEN_WIDTH] = "Geen wifi";
+char english[SCREEN_WIDTH] = "No wifi";
 
-const char *words[] = {
-  "Nederlands", "Dutch",
-  "Engles", "English",
-  "Ierland", "Ireland",
-  "Hoi", "Hi",
-  "Ik", "I",
-  "Jij", "You (singular)",
-  "U", "You (formal)",
-  "Hij", "He",
-  "Zij", "She",
-  "Het", "It",
-  "Jullie", "You (Plural)",
-  "Wij", "We",
-  "Zij", "They",
-  "De tafel", "The table",
-  "De boekenkast", "The bookcase",
-  "De lichtschakelaar", "The light switch",
-  "Het fornuis", "The stove",
-  "De gootsteen", "The sink",
-  "Het raam", "The window",
-  "De vloer", "The floor",
-  "De muur", "The wall",
-  "De sleutel", "The key",
-  "De trap", "The stairs",
-  "Nul", "Zero",
-  "Een", "One",
-  "Twee", "Two",
-  "Drie", "Three",
-  "Vier", "Four",
-  "Vijf", "Five",
-  "Zes", "Six",
-  "Zeven", "Seven", 
-  "Acht", "Eight",
-  "Negen", "Nine",
-  "Tien", "Ten",
-  "Doei", "Bye",
-  "Tot ziens", "See you later",
-  "Tot snel", "See you soon",
-  "Tot straks", "See you later",
-  "Het huis", "The house",
-  "Mijn", "Mine",
-  "Jouw", "Yours",
-  "Mevrouw", "Mrs.",
-  "Meneer", "Mr.",
-  "Vriend", "Friend",
-  "De jongen", "The boy",
-  "Het meisje", "The girl",
-  "De vrouw", "The woman",
-  "De man", "The man",
-  "Wonen", "To live",
-  "Heten", "To be called",
-  "Ook", "Also",
-  "Collega", "Colleague",
-  "Zijn", "To be",
-  "Ik ben", "I am",
-  "Jij bent", "You are",
-  "Het is", "It is",
-  "Hebben", "To have",
-  "Klein", "Small",
-  "Lang", "Tall",
-  "Dom", "Dumb",
-  "Grappig", "Funny",
-  "Heel", "Very",
-  "Slim", "Smart",
-  "Erg", "Very",
-  "Groot", "Big",
-  "En", "And",
-  "Dik", "Fat",
-  "Dun", "Thin",
-  "Aardig", "Kind",
-  "Nieuw", "New",
-  "Oud", "Old",
-  "Lief", "Sweet",
-  "Blij", "Happy",
-  "Of", "Or",
-  "Baan", "Job",
-  "Familie", "Family (extended)",
-  "Gezin", "Family (immediate)",
-  "Tuin", "Garden",
-  "Leuke", "Friendly",
-  "Buren", "Neighbours",
-  "Slaapkamer", "Bedroom",
-  "Veel", "A lot",
-  "Tijd", "Time",
-  "Teveel", "Too much",
-  "Weinig", "Few",
-  "Werk", "Work",
-  "Fiets", "Bike",
-  "Belangrijke", "Important",
-  "Vandaan", "From",
-  "Aangenaam", "Nice to meet you",
-  "Ons", "Our",
-  "Uit", "Out",
-  "Komen", "To come",
-  "Maand", "Month",
-  "Maar", "But",
-  "Gaan", "To go",
-  "Leren", "To learn",
-  "Talenschool", "Language school",
-  "Wie", "How",
-  "Vertaald", "Translate",
-  "Moeder", "Mother",
-  "Vader", "Father",
-  "Zoeken", "To search",
-  "Willen", "To want",
-  "Woning", "Living place",
-  "Huren", "To rent",
-  "Niet", "Not",
-  "Makkelijk", "Easy",
-  "Begrijpen", "To understand",
-  "Dankjewel", "Thanks you",
-  "Moet", "Must",
-  "Nu", "Now",
-  "Bellen", "To call",
-  "Lopen", "To walk",
-  "Vanavond", "This evening",
-  "Eerste", "First",
-  "Spannend", "Exciting",
-  "Werken", "To work",
-  "Luisteren", "To listen",
-  "Doen", "To do",
-  "Fietsen", "To ride",
-  "Denken", "To think",
-  "Kijken", "To watch",
-  "Wachten", "To wait",
-  "Helpen", "To help",
-  "Sturen", "To steer",
-  "Praten", "To talk",
-  "Weten", "To know",
-  "Lezen", "To read",
-  "Leven", "To live",
-  "Zitten", "To sit",
-  "Liggen", "To lie down",
-  "Gaan", "To go",
-  "Maandag", "Monday",
-  "Dinsdag", "Tuesday",
-  "Woensdag", "Wednesday",
-  "Donderdag", "Thursday",
-  "Vrijdag", "Firday",
-  "Zaterdag", "Saturday",
-  "Zondag", "Sunday",
-  "Kopen", "To buy",
-  "Bestaan", "To exist",
-  "Pakken", "To take",
-  "Bestellen", "To order",
-  "De winkel", "The shop",
-  "De bioscoop", "The cinema",
-  "Herhalen", "To repeat",
-  "Haar", "Her",
-  "Kleding", "Clothes",
-  "Altijd", "Always",
-  "Bedrijf", "Company",
-  "Blijven", "To stay",
-  "Vandaag", "Today",
-  "Zeggen", "To say",
-  "Wit", "White",
-  "Geel", "Yellow",
-  "Groen", "Green",
-  "Blauw", "Blue",
-  "Zwart", "Black",
-  "Rood", "Red",
-  "Bruin", "Brown",
-  "Oranje", "Orange",
-  "Paars", "Purple",
-  "Roze", "Pink",
-  "Beige", "Beige",
-  "Grijs", "Grey",
-  "Kleur", "Colour",
-  "Gras", "Grass",
-  "Hart", "Heart",
-  "Zon", "Sun",
-  "Schoen", "Shoe",
-  "Jouw", "Your",
-  "Vallen", "To fall",
-};
+void connect_to_wifi() {
+  delay(5);
+
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println();
+  Serial.println("WiFi connected.");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+}
+
+void request_random_word() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    String serverPath = serverName + "/api/random_word";
+    http.begin(serverPath.c_str());
+
+    int httpResponseCode = http.GET();
+
+    if (httpResponseCode > 0) {
+      // Serial.print("HTTP Response code: ");
+      // Serial.println(httpResponseCode);
+      String payload = http.getString();
+      
+      // assuming payload = "{"dutch":"<DUTCH WORD>","english":"<ENGLISH WORD>"}"
+      // It aint pretty but it works
+      int dutch_offset = 10;
+      int i = 0;
+      for (i; i < SCREEN_WIDTH; i++) {
+        if (payload[i+dutch_offset] == '"') {
+          dutch[i] = 0;
+          break;
+        }
+        dutch[i] = payload[i+dutch_offset];
+      }
+
+      int english_offset = dutch_offset + 13 + i;
+      for (i = 0; i < SCREEN_WIDTH; i++) {
+        if (payload[i+english_offset] == '"') {
+          english[i] = 0;
+          break;
+        }
+        english[i] = payload[i+english_offset];
+      }
+      
+      // Serial.println(payload);
+    } else {
+      Serial.print("Error code: ");
+      Serial.println(httpResponseCode);
+    }
+    http.end();
+  } else {
+    Serial.println("WiFi Disconnected");
+  }
+}
 
 void setup() {
-  // randomSeed(analogRead(0));
+  Serial.begin(115200);
 
   lcd.init();
   lcd.backlight();
 
-  num_words = (sizeof(words)/sizeof(words[0]))/2;
+  connect_to_wifi();
 }
 
 void loop() {
-  int word = esp_random()%num_words;
-  // int word = current_word++;
+  request_random_word();
 
   lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print(words[word*2]);
-  lcd.setCursor(0,1);
-  lcd.print(words[word*2 +1]);
-  
-  // current_word %= num_words;
+  lcd.setCursor(0, 0);
+  lcd.print(dutch);
+  lcd.setCursor(0, 1);
+  lcd.print(english);
 
   delay(HOLD_TIME);
 }
