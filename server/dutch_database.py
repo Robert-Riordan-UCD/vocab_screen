@@ -59,3 +59,12 @@ def get_all_words():
     for row in rows:
         words.append([row[0].split(':')[0], row[0].split(':')[1], row[1]])
     return words
+
+def add_success(word):
+    db = sqlite3.connect('dutch.db')
+    cursor = db.cursor()
+
+    cursor.execute("UPDATE translations SET success_count = success_count + 1 WHERE word=?", (word,))
+
+    db.commit()
+    db.close()

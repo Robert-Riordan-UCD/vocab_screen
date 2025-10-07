@@ -28,6 +28,13 @@ def random_word():
     word = dutch_database.get_random_word()
     return jsonify({"dutch": word[0], "english": word[1]})
 
+@app.route("/api/success", methods=["GET"])
+def success():
+    word = request.args.get('word').lower().replace('-', ' ')
+    if word:
+        dutch_database.add_success(word)
+    return render_template_string(html)
+ 
 @app.route("/view", methods={"GET", "POST"})
 def view_database():
     if request.method == "POST":

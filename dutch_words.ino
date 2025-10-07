@@ -12,12 +12,21 @@ String serverName = "http://192.168.2.8:5000/";
 
 #define HOLD_TIME 30000
 #define SCREEN_WIDTH 16
+#define SCREEN_REFRESH_RATE 500
+
+#define SHOW_BTN 34
+#define SUCCESS_BTN 35
 
 // Address, characters per line, lines
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 char dutch[SCREEN_WIDTH] = "Geen wifi";
 char english[SCREEN_WIDTH] = "No wifi";
+bool show_eng = false;
+bool update_screen = true;
+bool success = false;
+unsigned long next_word_time = 0;
+
 
 void connect_to_wifi() {
   delay(5);
@@ -78,8 +87,41 @@ void request_random_word() {
       Serial.println(httpResponseCode);
     }
     http.end();
+
+    show_eng = false;
+    update_screen = true;
   } else {
     Serial.println("WiFi Disconnected");
+  }
+}
+
+void send_success() {
+    if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    String serverPath = serverName + "/api/success?word=" + dutch + ':' + english; // + <DUTCH>:<ENGLISH>
+    serverPath.replace(' ', '-');
+    Serial.println(serverPath);    
+
+    http.begin(serverPath.c_str());
+
+    int httpResponseCode = http.GET();
+    Serial.println(httpResponseCode);
+  } else {
+    Serial.println("WiFi Disconnected");
+  }
+
+  success = false;
+}
+
+void IRAM_ATTR isr_show() {
+  show_eng = true;
+  update_screen = true;
+}
+
+void IRAM_ATTR isr_success() {
+  Serial.println("SUCCESS");
+  if (show_eng) {
+    success = true;
   }
 }
 
@@ -90,16 +132,28 @@ void setup() {
   lcd.backlight();
 
   connect_to_wifi();
+
+  attachInterrupt(SHOW_BTN, isr_show, FALLING);
+  attachInterrupt(SUCCESS_BTN, isr_success, FALLING);
 }
 
 void loop() {
-  request_random_word();
+  if (next_word_time < millis()) {
+    if (success) {
+      send_success();
+    }
+    request_random_word();
+    next_word_time = millis() + HOLD_TIME;
+  }
 
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print(dutch);
-  lcd.setCursor(0, 1);
-  lcd.print(english);
-
-  delay(HOLD_TIME);
+  if (update_screen) {
+    update_screen = false;
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print(dutch);
+    if (show_eng) {
+      lcd.setCursor(0, 1);
+      lcd.print(english);
+    }
+  }
 }
