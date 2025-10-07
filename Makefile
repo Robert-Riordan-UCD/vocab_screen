@@ -6,7 +6,7 @@ launch-server: backup-db kill-server
 	(echo cd ~/dutch_words/server; echo bash launch_server.sh) | ssh ${PI_USERNAME}@${PI_IP_ADDRESS}
 	
 kill-server:
-	(echo pkill -f server.py) | ssh ${PI_USERNAME}@${PI_IP_ADDRESS}
+	-(echo pkill -f server.py) | ssh ${PI_USERNAME}@${PI_IP_ADDRESS}
 
 backup-db:
 	scp -r ${PI_IP_ADDRESS}:~/dutch_words/server/dutch.db server/dutch.db
