@@ -1,5 +1,7 @@
 import sqlite3, random
 
+success_threshold = 10
+
 def setup():
     db = sqlite3.connect('dutch.db')
     cursor  = db.cursor()
@@ -40,8 +42,9 @@ def remove_word(word:str):
 def get_random_word():
     db = sqlite3.connect("dutch.db")
     cursor = db.cursor()
-    cursor.execute("SELECT word, success_count FROM translations")
+    cursor.execute("SELECT word, success_count FROM translations WHERE success_count < ?", (success_threshold,))
     word = random.choice(cursor.fetchall())[0]
+    print(word)
     db.close()
 
     dutch = word.split(':')[0].capitalize()
