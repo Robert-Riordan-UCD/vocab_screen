@@ -14,8 +14,8 @@ String serverName = "http://192.168.2.8:5000/";
 #define SCREEN_WIDTH 16
 #define SCREEN_REFRESH_RATE 500
 
-#define SHOW_BTN 34
-#define SUCCESS_BTN 35
+#define SHOW_BTN D0
+#define SUCCESS_BTN D1
 
 // Address, characters per line, lines
 LiquidCrystal_I2C lcd(0x27, 16, 2);
