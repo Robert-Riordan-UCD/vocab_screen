@@ -11,8 +11,9 @@ NetworkServer server(80);
 String serverName = "http://192.168.2.8:5000/";
 
 #define HOLD_TIME 30000
+#define SHOW_BOTH_TIME 10000
+
 #define SCREEN_WIDTH 16
-#define SCREEN_REFRESH_RATE 500
 
 #define SHOW_BTN D0
 #define SUCCESS_BTN D1
@@ -124,6 +125,7 @@ void IRAM_ATTR isr_show() {
   show_eng = true;
   show_nl = true;
   update_screen = true;
+  next_word_time = millis() + SHOW_BOTH_TIME;
 }
 
 void IRAM_ATTR isr_success() {
@@ -152,6 +154,13 @@ void loop() {
     }
     request_random_word();
     next_word_time = millis() + HOLD_TIME;
+  }
+
+  if (next_word_time - SHOW_BOTH_TIME < millis() && (!show_nl || !show_eng)) {
+    show_nl = true;
+    show_eng = true;
+    update_screen = true;
+    Serial.println("showing both");
   }
 
   if (update_screen) {
