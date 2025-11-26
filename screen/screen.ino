@@ -22,6 +22,7 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 char dutch[SCREEN_WIDTH] = "Geen wifi";
 char english[SCREEN_WIDTH] = "No wifi";
+bool show_nl = false;
 bool show_eng = false;
 bool update_screen = true;
 bool success = false;
@@ -88,7 +89,13 @@ void request_random_word() {
     }
     http.end();
 
-    show_eng = false;
+    if (random()%2) {
+      show_nl = true;
+      show_eng = false;
+    } else {
+      show_nl = false;
+      show_eng = true;
+    }
     update_screen = true;
   } else {
     Serial.println("WiFi Disconnected");
@@ -115,12 +122,13 @@ void send_success() {
 
 void IRAM_ATTR isr_show() {
   show_eng = true;
+  show_nl = true;
   update_screen = true;
 }
 
 void IRAM_ATTR isr_success() {
   Serial.println("SUCCESS");
-  if (show_eng) {
+  if (show_eng && show_nl) {
     success = true;
   }
 }
@@ -149,8 +157,10 @@ void loop() {
   if (update_screen) {
     update_screen = false;
     lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print(dutch);
+    if (show_nl) {
+      lcd.setCursor(0, 0);
+      lcd.print(dutch);
+    }
     if (show_eng) {
       lcd.setCursor(0, 1);
       lcd.print(english);
