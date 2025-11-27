@@ -12,6 +12,9 @@ String serverName = "http://192.168.2.8:5000/";
 
 #define HOLD_TIME 30000
 #define SHOW_BOTH_TIME 10000
+#define SCROLL_TIME 1500
+
+#define CHAR_PER_SCROLL 3
 
 #define SCREEN_WIDTH 16
 #define MAX_WORD_LENGTH 256
@@ -26,9 +29,12 @@ char dutch[MAX_WORD_LENGTH] = "Geen wifi";
 char english[MAX_WORD_LENGTH] = "No wifi";
 bool show_nl = false;
 bool show_eng = false;
+uint8_t nl_length = 9;
+uint8_t eng_length = 7;
 bool update_screen = true;
 bool success = false;
 unsigned long next_word_time = 0;
+unsigned long next_scroll_time = 0;
 
 
 void connect_to_wifi() {
@@ -74,6 +80,7 @@ void request_random_word() {
         }
         dutch[i] = payload[i+dutch_offset];
       }
+      nl_length = i;
 
       int english_offset = dutch_offset + 13 + i;
       for (i = 0; i < MAX_WORD_LENGTH; i++) {
@@ -83,6 +90,7 @@ void request_random_word() {
         }
         english[i] = payload[i+english_offset];
       }
+      eng_length = i;
       
       // Serial.println(payload);
     } else {
@@ -148,32 +156,78 @@ void setup() {
   attachInterrupt(SUCCESS_BTN, isr_success, FALLING);
 }
 
+int nl_scroll_offset = 0;
+int eng_scroll_offset = 0;
 void loop() {
   if (next_word_time < millis()) {
     if (success) {
       send_success();
     }
     request_random_word();
+    nl_scroll_offset = 0;
+    eng_scroll_offset = 0;
+    next_scroll_time = millis() + SCROLL_TIME;
     next_word_time = millis() + HOLD_TIME;
+    // Extra 2 seconds per offscreen character
+    if (nl_length > SCREEN_WIDTH || eng_length > SCREEN_WIDTH) {
+      next_word_time = millis() + HOLD_TIME + 2000*(max(nl_length, eng_length)-SCREEN_WIDTH);
+    }
   }
 
   if (next_word_time - SHOW_BOTH_TIME < millis() && (!show_nl || !show_eng)) {
     show_nl = true;
     show_eng = true;
     update_screen = true;
-    Serial.println("showing both");
+  }
+
+  if (next_scroll_time < millis()) {
+    if (nl_length > SCREEN_WIDTH) {
+      nl_scroll_offset += CHAR_PER_SCROLL;
+      if (nl_length < SCREEN_WIDTH + nl_scroll_offset - CHAR_PER_SCROLL) {
+        nl_scroll_offset = 0;
+      }
+      update_screen = true;
+    }
+
+    if (eng_length > SCREEN_WIDTH) {
+      eng_scroll_offset += CHAR_PER_SCROLL;
+      if (eng_length < SCREEN_WIDTH + eng_scroll_offset - CHAR_PER_SCROLL) {
+        eng_scroll_offset = 0;
+      }
+      update_screen = true;
+    }
+
+    next_scroll_time = millis() + SCROLL_TIME;
   }
 
   if (update_screen) {
     update_screen = false;
     lcd.clear();
+
     if (show_nl) {
+      char dutch_to_show[SCREEN_WIDTH];
+      for (int i=0; i < SCREEN_WIDTH; i++) {
+        if (dutch[i+nl_scroll_offset] == 0) {
+          dutch_to_show[i] = 0;
+          break;
+        }
+        dutch_to_show[i] = dutch[i+nl_scroll_offset];
+      }
       lcd.setCursor(0, 0);
-      lcd.print(dutch);
+      lcd.print(dutch_to_show);
     }
+
     if (show_eng) {
+      char english_to_show[SCREEN_WIDTH];
+      for (int i=0; i < SCREEN_WIDTH; i++) {
+        if (english[i+eng_scroll_offset] == 0) {
+          english_to_show[i] = 0;
+          break;
+        }
+        english_to_show[i] = english[i+eng_scroll_offset];
+      }
       lcd.setCursor(0, 1);
-      lcd.print(english);
+      lcd.print(english_to_show);
     }
   }
 }
