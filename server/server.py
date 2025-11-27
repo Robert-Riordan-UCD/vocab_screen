@@ -6,12 +6,40 @@ app = Flask(__name__)
 html = """
 <!doctype html>
 <html>
-    <head><title>Words</title></head>
+    <head>
+        <title>Words</title>
+        <style>
+            form {
+                padding: 5%;
+            }
+
+            input {
+                font-size: 150%;
+                text-align: center;
+                margin: auto;
+                width: 100%;
+                box-sizing: border-box
+            }
+
+            p {
+                margin: auto;
+                width: 50%;
+                padding: 5px 0;
+            }
+
+            button {
+                font-size: 150%;
+                text-align: center;
+                margin: auto;
+                width: 100%;
+            }
+        </style>
+        </head>
     <body>
     <form method="POST">
-        <input type="text" name="dutch" placeholder="Dutch" required>
-        <input type="text" name="english" placeholder="English" required>
-        <button type="submit">Submit</button>
+        <p><input type="text" name="dutch" placeholder="Dutch" required></p>
+        <p><input type="text" name="english" placeholder="English" required></p>
+        <p><button type="submit">Submit</button></p>
     </form>
     </body>
 </html>
@@ -19,6 +47,7 @@ html = """
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    print(request.form)
     if request.method == "POST":
         dutch_database.add_word(request.form['dutch'], request.form['english'])
     return render_template_string(html)
@@ -34,7 +63,14 @@ def success():
     if word:
         dutch_database.add_success(word)
     return render_template_string(html)
- 
+
+@app.route("/api/remove_word", methods={"GET", "POST"})
+def remove_word():
+    word = request.args.get('word').lower().replace('-', ' ')
+    if word:
+        dutch_database.remove_word(word)
+    return render_template_string(html)
+
 @app.route("/view", methods={"GET", "POST"})
 def view_database():
     if request.method == "POST":

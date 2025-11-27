@@ -1,2 +1,5 @@
 secrets.h
 .secrets
+
+.venv
+__pycache__
