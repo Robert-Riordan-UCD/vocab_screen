@@ -14,6 +14,7 @@ String serverName = "http://192.168.2.8:5000/";
 #define SHOW_BOTH_TIME 10000
 
 #define SCREEN_WIDTH 16
+#define MAX_WORD_LENGTH 256
 
 #define SHOW_BTN D0
 #define SUCCESS_BTN D1
@@ -21,8 +22,8 @@ String serverName = "http://192.168.2.8:5000/";
 // Address, characters per line, lines
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-char dutch[SCREEN_WIDTH] = "Geen wifi";
-char english[SCREEN_WIDTH] = "No wifi";
+char dutch[MAX_WORD_LENGTH] = "Geen wifi";
+char english[MAX_WORD_LENGTH] = "No wifi";
 bool show_nl = false;
 bool show_eng = false;
 bool update_screen = true;
@@ -66,7 +67,7 @@ void request_random_word() {
       // It aint pretty but it works
       int dutch_offset = 10;
       int i = 0;
-      for (i; i < SCREEN_WIDTH; i++) {
+      for (i; i < MAX_WORD_LENGTH; i++) {
         if (payload[i+dutch_offset] == '"') {
           dutch[i] = 0;
           break;
@@ -75,7 +76,7 @@ void request_random_word() {
       }
 
       int english_offset = dutch_offset + 13 + i;
-      for (i = 0; i < SCREEN_WIDTH; i++) {
+      for (i = 0; i < MAX_WORD_LENGTH; i++) {
         if (payload[i+english_offset] == '"') {
           english[i] = 0;
           break;
@@ -122,6 +123,7 @@ void send_success() {
 }
 
 void IRAM_ATTR isr_show() {
+  if (show_eng && show_nl) {return;}
   show_eng = true;
   show_nl = true;
   update_screen = true;
@@ -129,7 +131,6 @@ void IRAM_ATTR isr_show() {
 }
 
 void IRAM_ATTR isr_success() {
-  Serial.println("SUCCESS");
   if (show_eng && show_nl) {
     success = true;
   }
