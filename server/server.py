@@ -72,12 +72,15 @@ def remove_word():
     return redirect(url_for("view_database"))
 
 @app.route("/view", methods={"GET"})
-def view_database():    
-    view_start = """
+def view_database():
+    data = dutch_database.make_success_chart()
+
+    view_start = f"""
     <!doctype html>
     <html>
         <head><title>Words</title></head>
         <body>
+            <img src='data:image/png;base64,{data}' alt="Histogram of success count" style="position:absolute; top:0px; right:0px;"/>
             <table>
                 <thead>
                     <tr>

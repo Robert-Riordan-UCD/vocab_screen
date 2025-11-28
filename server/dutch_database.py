@@ -68,3 +68,37 @@ def add_success(word):
 
     db.commit()
     db.close()
+
+# import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from io import BytesIO
+import base64
+def make_success_chart():
+    # file_name = "success_chart.png"
+    
+    db = sqlite3.connect("dutch.db")
+    cursor = db.cursor()
+    cursor.execute("SELECT word, success_count FROM translations",)
+    words = cursor.fetchall()
+    db.close()
+
+    count = [0 for _ in range(success_threshold+1)]
+    
+    for word in words:
+        count[word[1]] += 1
+    
+    # https://matplotlib.org/stable/gallery/user_interfaces/web_application_server_sgskip.html
+    fig = Figure()
+    ax = fig.subplots()
+    ax.bar([i for i in range(success_threshold+1)], count)
+    ax.set_ylabel('Number of words')
+    ax.set_xlabel('Success count')
+    
+    buf = BytesIO()
+    fig.savefig(buf, format='png')
+    data = base64.b64encode(buf.getbuffer()).decode('ascii')
+    
+    return data
+
+if __name__ == "__main__":
+    make_success_chart()
