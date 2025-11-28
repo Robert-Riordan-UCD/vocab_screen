@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template_string, jsonify
+from flask import Flask, request, render_template_string, jsonify, redirect, url_for
 import dutch_database
 
 app = Flask(__name__)
@@ -47,7 +47,6 @@ html = """
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    print(request.form)
     if request.method == "POST":
         dutch_database.add_word(request.form['dutch'], request.form['english'])
     return render_template_string(html)
@@ -66,18 +65,14 @@ def success():
 
 @app.route("/api/remove_word", methods={"GET", "POST"})
 def remove_word():
-    word = request.args.get('word').lower().replace('-', ' ')
+    print(request.form)
+    word = request.form.get('word').lower().replace('-', ' ')
     if word:
         dutch_database.remove_word(word)
-    return render_template_string(html)
+    return redirect(url_for("view_database"))
 
-@app.route("/view", methods={"GET", "POST"})
-def view_database():
-    if request.method == "POST":
-        for key in request.form:
-            print(key)
-            dutch_database.remove_word(key)
-    
+@app.route("/view", methods={"GET"})
+def view_database():    
     view_start = """
     <!doctype html>
     <html>
@@ -109,8 +104,9 @@ def view_database():
                         <td>{word[1].capitalize()}</td>
                         <td>{word[2]}</td>
                         <td>
-                            <form method="POST">
-                                <button name={word[0]+':'+word[1]} type="submit">Delete</button>
+                            <form action="/api/remove_word" method="POST">
+                                <input type="hidden" name="word" value="{word[0]}:{word[1]}">
+                                <button type="submit">Delete</button>
                             </form>
                         </td>
                     </tr>

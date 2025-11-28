@@ -34,8 +34,6 @@ def remove_word(word:str):
 
     cursor.execute("DELETE FROM translations WHERE word=?", (word,))
     
-    print(f"deleting {word}")
-
     db.commit()
     db.close()
     
@@ -44,7 +42,6 @@ def get_random_word():
     cursor = db.cursor()
     cursor.execute("SELECT word, success_count FROM translations WHERE success_count < ?", (success_threshold,))
     word = random.choice(cursor.fetchall())[0]
-    print(word)
     db.close()
 
     dutch = word.split(':')[0].capitalize()
