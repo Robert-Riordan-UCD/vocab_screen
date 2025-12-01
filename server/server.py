@@ -3,50 +3,51 @@ import dutch_database
 
 app = Flask(__name__)
 
-html = """
-<!doctype html>
-<html>
-    <head>
-        <title>Words</title>
-        <style>
-            form {
-                padding: 5%;
-            }
-
-            input {
-                font-size: 150%;
-                text-align: center;
-                margin: auto;
-                width: 100%;
-                box-sizing: border-box
-            }
-
-            p {
-                margin: auto;
-                width: 50%;
-                padding: 5px 0;
-            }
-
-            button {
-                font-size: 150%;
-                text-align: center;
-                margin: auto;
-                width: 100%;
-            }
-        </style>
-        </head>
-    <body>
-    <form method="POST">
-        <p><input type="text" name="dutch" placeholder="Dutch" required></p>
-        <p><input type="text" name="english" placeholder="English" required></p>
-        <p><button type="submit">Submit</button></p>
-    </form>
-    </body>
-</html>
-"""
-
 @app.route("/", methods=["GET", "POST"])
 def index():
+    html = f"""
+    <!doctype html>
+    <html>
+        <head>
+            <title>Words</title>
+            <style>
+                form {{
+                    padding: 5%;
+                }}
+
+                input {{
+                    font-size: 150%;
+                    text-align: center;
+                    margin: auto;
+                    width: 100%;
+                    box-sizing: border-box
+                }}
+
+                p {{
+                    margin: auto;
+                    width: 50%;
+                    padding: 5px 0;
+                }}
+
+                button {{
+                    font-size: 150%;
+                    text-align: center;
+                    margin: auto;
+                    width: 100%;
+                }}
+            </style>
+            </head>
+        <body>
+        <a href="{url_for("view_database")}">Go to database view</a>
+        <form method="POST">
+            <p><input type="text" name="dutch" placeholder="Dutch" required></p>
+            <p><input type="text" name="english" placeholder="English" required></p>
+            <p><button type="submit">Submit</button></p>
+        </form>
+        </body>
+    </html>
+    """
+
     if request.method == "POST":
         dutch_database.add_word(request.form['dutch'], request.form['english'])
     return render_template_string(html)
@@ -61,7 +62,7 @@ def success():
     word = request.args.get('word').lower().replace('-', ' ')
     if word:
         dutch_database.add_success(word)
-    return render_template_string(html)
+    return redirect(url_for("view_database"))
 
 @app.route("/api/remove_word", methods={"GET", "POST"})
 def remove_word():
@@ -81,6 +82,7 @@ def view_database():
         <head><title>Words</title></head>
         <body>
             <img src='data:image/png;base64,{data}' alt="Histogram of success count" style="position:absolute; top:0px; right:0px;"/>
+            <a href="{url_for("index")}">Go to input form</a>
             <table>
                 <thead>
                     <tr>
