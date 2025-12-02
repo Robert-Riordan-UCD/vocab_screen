@@ -99,6 +99,3 @@ def make_success_chart():
     data = base64.b64encode(buf.getbuffer()).decode('ascii')
     
     return data
-
-if __name__ == "__main__":
-    make_success_chart()

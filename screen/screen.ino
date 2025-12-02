@@ -35,6 +35,8 @@ bool update_screen = true;
 bool success = false;
 unsigned long next_word_time = 0;
 unsigned long next_scroll_time = 0;
+uint8_t nl_scroll_offset = 0;
+uint8_t eng_scroll_offset = 0;
 
 
 void connect_to_wifi() {
@@ -144,6 +146,53 @@ void IRAM_ATTR isr_success() {
   }
 }
 
+void scroll_word(char* word, int scroll_offset, int word_length, bool show, char* scrolled_word) {
+  if (!show) {
+    scrolled_word[0] = 0;
+    return;
+  }
+
+  for (int i=0; i < SCREEN_WIDTH; i++) {
+    if (word[i+scroll_offset] == 0) {
+      scrolled_word[i] = 0;
+      break;
+    }
+    scrolled_word[i] = word[i+scroll_offset];
+  }
+}
+
+void display_word(char* dutch_to_show, char* english_to_show) {
+  lcd.clear();
+
+  lcd.setCursor(0, 0);
+  lcd.print(dutch_to_show);
+
+  lcd.setCursor(0, 1);
+  lcd.print(english_to_show);
+}
+
+uint8_t update_scroll_offset(uint8_t current_offset, uint8_t word_length, bool show) {
+  if (!show) {return 0;} // Not showing word
+  if (word_length < SCREEN_WIDTH) {return 0;} // Word too short to scroll
+  if (current_offset > word_length - SCREEN_WIDTH) { // Return to start of word
+    update_screen = true;
+    return 0;
+  }
+  update_screen = true;
+  return current_offset + CHAR_PER_SCROLL;
+}
+
+void reset_globals() {
+    nl_scroll_offset = 0;
+    eng_scroll_offset = 0;
+    next_scroll_time = millis() + SCROLL_TIME;
+    next_word_time = millis() + HOLD_TIME;
+    // Extra 2 seconds per offscreen character
+    if (nl_length > SCREEN_WIDTH || eng_length > SCREEN_WIDTH) {
+      next_word_time = millis() + HOLD_TIME + 2000*(max(nl_length, eng_length)-SCREEN_WIDTH);
+    }
+}
+
 void setup() {
   Serial.begin(115200);
 
@@ -156,22 +205,11 @@ void setup() {
   attachInterrupt(SUCCESS_BTN, isr_success, FALLING);
 }
 
-int nl_scroll_offset = 0;
-int eng_scroll_offset = 0;
 void loop() {
   if (next_word_time < millis()) {
-    if (success) {
-      send_success();
-    }
+    if (success) {send_success();}
     request_random_word();
-    nl_scroll_offset = 0;
-    eng_scroll_offset = 0;
-    next_scroll_time = millis() + SCROLL_TIME;
-    next_word_time = millis() + HOLD_TIME;
-    // Extra 2 seconds per offscreen character
-    if (nl_length > SCREEN_WIDTH || eng_length > SCREEN_WIDTH) {
-      next_word_time = millis() + HOLD_TIME + 2000*(max(nl_length, eng_length)-SCREEN_WIDTH);
-    }
+    reset_globals();
   }
 
   if (next_word_time - SHOW_BOTH_TIME < millis() && (!show_nl || !show_eng)) {
@@ -180,54 +218,19 @@ void loop() {
     update_screen = true;
   }
 
-  if (next_scroll_time < millis()) {
-    if (nl_length > SCREEN_WIDTH) {
-      nl_scroll_offset += CHAR_PER_SCROLL;
-      if (nl_length < SCREEN_WIDTH + nl_scroll_offset - CHAR_PER_SCROLL) {
-        nl_scroll_offset = 0;
-      }
-      update_screen = true;
-    }
-
-    if (eng_length > SCREEN_WIDTH) {
-      eng_scroll_offset += CHAR_PER_SCROLL;
-      if (eng_length < SCREEN_WIDTH + eng_scroll_offset - CHAR_PER_SCROLL) {
-        eng_scroll_offset = 0;
-      }
-      update_screen = true;
-    }
-
-    next_scroll_time = millis() + SCROLL_TIME;
-  }
-
   if (update_screen) {
     update_screen = false;
-    lcd.clear();
+    char dutch_to_show[SCREEN_WIDTH];
+    char english_to_show[SCREEN_WIDTH];
+    scroll_word(dutch, nl_scroll_offset, nl_length, show_nl, dutch_to_show);
+    scroll_word(english, eng_scroll_offset, eng_length, show_eng, english_to_show);
+    display_word(dutch_to_show, english_to_show);
+  }
 
-    if (show_nl) {
-      char dutch_to_show[SCREEN_WIDTH];
-      for (int i=0; i < SCREEN_WIDTH; i++) {
-        if (dutch[i+nl_scroll_offset] == 0) {
-          dutch_to_show[i] = 0;
-          break;
-        }
-        dutch_to_show[i] = dutch[i+nl_scroll_offset];
-      }
-      lcd.setCursor(0, 0);
-      lcd.print(dutch_to_show);
-    }
+  if (next_scroll_time < millis()) {
+    nl_scroll_offset = update_scroll_offset(nl_scroll_offset, nl_length, show_nl);
+    eng_scroll_offset = update_scroll_offset(eng_scroll_offset, eng_length, show_eng);
 
-    if (show_eng) {
-      char english_to_show[SCREEN_WIDTH];
-      for (int i=0; i < SCREEN_WIDTH; i++) {
-        if (english[i+eng_scroll_offset] == 0) {
-          english_to_show[i] = 0;
-          break;
-        }
-        english_to_show[i] = english[i+eng_scroll_offset];
-      }
-      lcd.setCursor(0, 1);
-      lcd.print(english_to_show);
-    }
+    next_scroll_time = millis() + SCROLL_TIME;
   }
 }
