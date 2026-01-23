@@ -1,6 +1,13 @@
 import sqlite3, random
+from dataclasses import dataclass
 
 success_threshold = 10
+
+@dataclass
+class Stats:
+    total_words: int = 0
+    new_words: int = 0
+    learned_words: int = 0
 
 def setup():
     db = sqlite3.connect('dutch.db')
@@ -69,6 +76,18 @@ def add_success(word):
     db.commit()
     db.close()
 
+def get_stats():
+    db = sqlite3.connect('dutch.db')
+    cursor = db.cursor()
+
+    stats = Stats()
+    stats.total_words = len(cursor.execute("SELECT word FROM translations").fetchall())
+    stats.new_words = len(cursor.execute("SELECT word, success_count FROM translations WHERE success_count == 0").fetchall())
+    stats.learned_words = len(cursor.execute(f"SELECT word, success_count FROM translations WHERE success_count >= {success_threshold}").fetchall())
+
+    return stats
+
+
 # import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from io import BytesIO
@@ -90,7 +109,7 @@ def make_success_chart():
     # https://matplotlib.org/stable/gallery/user_interfaces/web_application_server_sgskip.html
     fig = Figure()
     ax = fig.subplots()
-    ax.bar([i for i in range(success_threshold+1)], count)
+    ax.bar([i for i in range(success_threshold)], count[:-1])
     ax.set_ylabel('Number of words')
     ax.set_xlabel('Success count')
     

@@ -75,14 +75,41 @@ def remove_word():
 @app.route("/view", methods={"GET"})
 def view_database():
     data = dutch_database.make_success_chart()
+    stats = dutch_database.get_stats()
 
     view_start = f"""
     <!doctype html>
     <html>
         <head><title>Words</title></head>
         <body>
-            <img src='data:image/png;base64,{data}' alt="Histogram of success count" style="position:absolute; top:0px; right:0px;"/>
+            <!--- Link to input form --->
             <a href="{url_for("index")}">Go to input form</a>
+
+            <div style="position: absolute;top: 0px;right: 0px;text-align: right;">
+                <!--- Status graph --->
+                <img src='data:image/png;base64,{data}' alt="Histogram of success count" style="display: block;margin-left: auto;"/>
+
+                <!--- Stats --->
+                <table style="margin-left: auto;margin-right: 60px;">
+                    <thead></thead>
+                    <tbody>
+                        <tr>
+                            <td>Total words</td>
+                            <td>{stats.total_words}</td>
+                        </tr>
+                        <tr>
+                            <td>Learned words</td>
+                            <td>{stats.learned_words}</td>
+                        </tr>
+                        <tr>
+                            <td>New words</td>
+                            <td>{stats.new_words}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!---  --->
             <table>
                 <thead>
                     <tr>
