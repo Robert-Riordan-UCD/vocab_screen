@@ -23,7 +23,7 @@ String serverName = "http://192.168.2.8:5000/";
 #define SUCCESS_BTN D1
 
 // Address, characters per line, lines
-LiquidCrystal_I2C lcd(0x27, 16, 2);
+LiquidCrystal_I2C lcd(0x27, SCREEN_WIDTH, 2);
 
 char dutch[MAX_WORD_LENGTH] = "Geen wifi";
 char english[MAX_WORD_LENGTH] = "No wifi";
@@ -56,6 +56,19 @@ void connect_to_wifi() {
   Serial.println("WiFi connected.");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
+}
+
+void reconnect_to_wifi() {
+  // dutch = "Geen wifi";
+  // english = "No wifi";
+  // show_nl = true;
+  // show_eng = true;
+  // uint8_t nl_length = 9;
+  // uint8_t eng_length = 7;
+  // bool update_screen = true;
+
+  Serial.println("Attempting wifi reconnect");
+  connect_to_wifi();
 }
 
 void request_random_word() {
@@ -98,6 +111,7 @@ void request_random_word() {
     } else {
       Serial.print("Error code: ");
       Serial.println(httpResponseCode);
+      reconnect_to_wifi();
     }
     http.end();
 
@@ -111,6 +125,7 @@ void request_random_word() {
     update_screen = true;
   } else {
     Serial.println("WiFi Disconnected");
+    reconnect_to_wifi();
   }
 }
 
@@ -138,6 +153,7 @@ void IRAM_ATTR isr_show() {
   show_nl = true;
   update_screen = true;
   next_word_time = millis() + SHOW_BOTH_TIME;
+  next_scroll_time = millis() + SCROLL_TIME;
 }
 
 void IRAM_ATTR isr_success() {
