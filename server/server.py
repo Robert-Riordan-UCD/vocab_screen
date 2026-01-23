@@ -40,7 +40,7 @@ def index():
         <body>
         <a href="{url_for("view_database")}">Go to database view</a>
         <form method="POST">
-            <p><input type="text" name="dutch" placeholder="Dutch" required></p>
+            <p><input type="text" name="dutch" placeholder="Dutch" required autofocus></p>
             <p><input type="text" name="english" placeholder="English" required></p>
             <p><button type="submit">Submit</button></p>
         </form>
