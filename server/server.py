@@ -94,16 +94,20 @@ def view_database():
                     <thead></thead>
                     <tbody>
                         <tr>
-                            <td>Total words</td>
-                            <td>{stats.total_words}</td>
+                            <td>New words</td>
+                            <td>{stats.new_words}</td>
+                        </tr>
+                        <tr>
+                            <td>In progress words</td>
+                            <td>{stats.total_words - stats.learned_words - stats.new_words}</td>
                         </tr>
                         <tr>
                             <td>Learned words</td>
                             <td>{stats.learned_words}</td>
                         </tr>
                         <tr>
-                            <td>New words</td>
-                            <td>{stats.new_words}</td>
+                            <td>Total words</td>
+                            <td>{stats.total_words}</td>
                         </tr>
                     </tbody>
                 </table>
